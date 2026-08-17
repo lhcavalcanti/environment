@@ -3,20 +3,34 @@
 ## Install base tools
 
 ```bash
-brew install git neovim starship eza bat fd fzf
+brew install git gh azure-cli node uv neovim starship eza bat fd fzf
 brew install --cask iterm2
+brew install --cask font-fira-code-nerd-font
 brew install --cask copilot-cli
 brew install --cask claude-code
 ```
 
-Verify the AI CLIs:
+Verify the development and AI CLIs:
 
 ```bash
+gh --version
+az version
+node --version
+npm --version
+uv --version
 copilot --version
 claude --version
 ```
 
-Start `copilot` and run `/login` if prompted. Start `claude` and follow its browser authentication flow.
+Run `gh auth login` and `az login`. Start `copilot` and run `/login` if prompted. Start `claude` and follow its browser authentication flow.
+
+## Create the default Python environment
+
+```bash
+uv python install 3.14
+mkdir -p "$HOME/.venvs"
+uv venv --python 3.14 "$HOME/.venvs/default"
+```
 
 ## Install Oh My Zsh
 
@@ -32,83 +46,18 @@ git clone https://github.com/zsh-users/zsh-history-substring-search ${ZSH_CUSTOM
 git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 ```
 
-## Configure `~/.zshrc`
+## Install the shell configuration
 
-Use this layout:
+From the extracted archive directory, back up any existing shell files and install the supplied portable configuration:
 
 ```bash
-# ---- Prompt ----
-export STARSHIP_CONFIG=~/.config/starship.toml
-eval "$(starship init zsh)"
-
-# ---- Path / environment ----
-export CAPMAN_DIR="$HOME/src/LLMApi/sources/scripts/CapMan"
-export LLMLAB_OUTPUT_DIR="$HOME/src/lcavalcanti/artifacts"
-
-# BEGIN Agency MANAGED BLOCK
-if [[ ":${PATH}:" != *":/Users/lcavalcanti/.config/agency/CurrentVersion:"* ]]; then
-    export PATH="/Users/lcavalcanti/.config/agency/CurrentVersion:${PATH}"
-fi
-# END Agency MANAGED BLOCK
-
-# BEGIN claude-cli MANAGED BLOCK
-if [[ ":${PATH}:" != *":/Users/lcavalcanti/.claude-cli/CurrentVersion:"* ]]; then
-    export PATH="/Users/lcavalcanti/.claude-cli/CurrentVersion:${PATH}"
-fi
-# END claude-cli MANAGED BLOCK
-
-. "$HOME/.local/bin/env"
-source ~/.venvs/default/bin/activate
-
-# ---- Oh My Zsh custom plugin path ----
-ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
-
-# ---- Zsh plugins ----
-if [ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
-  source "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
-fi
-
-if [ -f "$ZSH_CUSTOM/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh" ]; then
-  source "$ZSH_CUSTOM/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh"
-fi
-
-# zsh-syntax-highlighting should be sourced after other plugins.
-if [ -f "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
-  source "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-fi
-
-# ---- Key bindings ----
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
-
-# ---- FZF + FD + BAT ----
-export FZF_DEFAULT_COMMAND='fd --type f'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-export FZF_ALT_C_COMMAND='fd --type d'
-
-export FZF_DEFAULT_OPTS='
-  --height 40%
-  --layout=reverse
-  --border
-  --preview "bat --style=numbers --color=always --line-range :200 {}"
-'
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-# ---- Aliases ----
-alias pilot='cd /Users/lcavalcanti/src/lcavalcanti && copilot --add-dir /Users/lcavalcanti/.copilot/installed-plugins/llmapi/llmlab --add-dir /Users/lcavalcanti/src --add-dir /Users/lcavalcanti/code --add-dir /Users/lcavalcanti/code/export-model-runner'
-alias start-cc2='/Users/lcavalcanti/src/lcavalcanti/tools/scripts/cc2-devtunnel.sh'
-alias stop-cc2='/Users/lcavalcanti/src/lcavalcanti/tools/scripts/stop-cc2-devtunnel.sh'
-alias ls='eza --icons'
-alias ll='eza -lh --icons'
-alias la='eza -la --icons'
-alias cat='bat'
-alias findf='fd'
-alias f='fzf'
-alias vf='nvim $(fzf)'  # fuzzy open file in nvim
-alias cf='cd $(fd --type d | fzf)'  # fuzzy cd into dir
-alias please='sudo'
-alias ..='cd ..'
+timestamp="$(date +%Y%m%d-%H%M%S)"
+[ -f "$HOME/.zprofile" ] && cp "$HOME/.zprofile" "$HOME/.zprofile.$timestamp.bak"
+[ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$HOME/.zshrc.$timestamp.bak"
+mkdir -p "$HOME/.config"
+install -m 0644 config/zprofile "$HOME/.zprofile"
+install -m 0644 config/zshrc "$HOME/.zshrc"
+install -m 0644 config/starship.toml "$HOME/.config/starship.toml"
 ```
 
 ## Standard tool replacements
@@ -120,8 +69,14 @@ alias ..='cd ..'
 | `find`         | `fd`        | `findf`          |
 | `grep` (fuzzy) | `fzf`       | `f`              |
 
-Reload shell:
+Start a new login shell:
 
 ```bash
-source ~/.zshrc
+exec zsh -l
 ```
+
+## Configure iTerm2 icons
+
+In **iTerm2 > Settings > Profiles > Text**, set both **Font** and
+**Non-ASCII Font** to **FiraCode Nerd Font Mono**, size 14. Restart iTerm2
+after changing the profile so Starship and `eza` icons use the patched glyphs.

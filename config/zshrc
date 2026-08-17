@@ -1,0 +1,84 @@
+# ---- Prompt ----
+export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+fi
+
+# ---- Path / environment ----
+export CAPMAN_DIR="$HOME/src/LLMApi/sources/scripts/CapMan"
+export LLMLAB_OUTPUT_DIR="$HOME/src/lcavalcanti/artifacts"
+
+path_prepend_if_directory() {
+  local candidate="$1"
+  if [[ -d "$candidate" && ":${PATH}:" != *":${candidate}:"* ]]; then
+    export PATH="${candidate}:${PATH}"
+  fi
+}
+
+path_prepend_if_directory "$HOME/.local/bin"
+path_prepend_if_directory "$HOME/.config/agency/CurrentVersion"
+path_prepend_if_directory "$HOME/.claude-cli/CurrentVersion"
+
+[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
+[[ -f "$HOME/.venvs/default/bin/activate" ]] && source "$HOME/.venvs/default/bin/activate"
+
+# ---- Zsh plugins ----
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+if [[ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+if [[ -f "$ZSH_CUSTOM/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh" ]]; then
+  source "$ZSH_CUSTOM/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh"
+fi
+
+# zsh-syntax-highlighting should be sourced after other plugins.
+if [[ -f "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  source "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# ---- Key bindings ----
+bind_autosuggest_right_arrow() {
+  local keymap
+  for keymap in main emacs viins; do
+    bindkey -M "$keymap" '^[[C' autosuggest-accept 2>/dev/null
+    bindkey -M "$keymap" '^I' expand-or-complete 2>/dev/null
+  done
+}
+
+bind_autosuggest_right_arrow
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# ---- FZF + FD + BAT ----
+export FZF_DEFAULT_COMMAND='fd --type f'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d'
+export FZF_DEFAULT_OPTS='
+  --height 40%
+  --layout=reverse
+  --border
+  --preview "bat --style=numbers --color=always --line-range :200 {}"
+'
+
+if command -v fzf >/dev/null 2>&1; then
+  source <(fzf --zsh)
+fi
+bind_autosuggest_right_arrow
+
+# ---- Aliases ----
+alias pilot='cd "$HOME/src/lcavalcanti" && copilot --add-dir "$HOME/.copilot/installed-plugins/llmapi/llmlab" --add-dir "$HOME/src" --add-dir "$HOME/code" --add-dir "$HOME/code/export-model-runner"'
+alias benchcli='cd "$HOME/src/LLMApi/tools/ReportGeneration/cli" && PATH="/opt/homebrew/opt/node@22/bin:$PATH" node dist/benchcli.js'
+alias start-cc2='"$HOME/src/lcavalcanti/tools/scripts/cc2-devtunnel.sh"'
+alias stop-cc2='"$HOME/src/lcavalcanti/tools/scripts/stop-cc2-devtunnel.sh"'
+alias ls='eza --icons'
+alias ll='eza -lh --icons'
+alias la='eza -la --icons'
+alias cat='bat'
+alias findf='fd'
+alias f='fzf'
+alias vf='nvim $(fzf)'
+alias cf='cd $(fd --type d | fzf)'
+alias please='sudo'
+alias ..='cd ..'

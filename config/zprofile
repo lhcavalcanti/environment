@@ -1,0 +1,8 @@
+# Homebrew installs under /opt/homebrew on Apple Silicon and /usr/local on Intel.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+export LLMLAB_OUTPUT_DIR="$HOME/src/lcavalcanti/artifacts"
